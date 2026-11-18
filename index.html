@@ -90,6 +90,15 @@ table.fw td small{display:block;color:var(--muted);font-size:11.5px}
 .notes li.w strong{color:var(--warn)}
 .notes li strong{font-weight:600}
 h4{font-family:var(--f-mono);font-weight:500;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.fwhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 6px}
+.fwhead h4{margin:0}
+.switch{display:inline-flex;align-items:center;gap:8px;border:0;background:none;padding:2px 0;color:var(--ink);font-size:12.5px}
+.switch .track{position:relative;width:32px;height:18px;border-radius:999px;background:var(--line);flex:none;transition:background .15s}
+.switch .knob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.switch[aria-checked="true"] .track{background:var(--hemo)}
+.switch[aria-checked="true"] .knob{left:16px}
+.switch:focus-visible{outline:2px solid var(--hemo);outline-offset:2px;border-radius:4px}
+.hidden-note{font-size:12px;color:var(--muted);margin:6px 0 0}
 footer{font-size:11px;color:var(--muted);line-height:1.35}
 footer .n{font-family:var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:no-preference){.vmark{transition:transform .25s ease}}
@@ -99,7 +108,7 @@ footer .n{font-family:var(--f-mono);color:var(--ink);font-variant-numeric:tabula
   .grid{grid-template-columns:minmax(0,1fr)}
   .col{overflow:visible}
 }
-@media (max-width:480px){.top{grid-template-columns:minmax(0,1fr)}.venn{margin:0 auto;max-width:220px}.cols{grid-template-columns:1fr}}
+@media (max-width:480px){.top{grid-template-columns:minmax(0,1fr)}.venn{margin:0 auto;max-width:220px}.cols{grid-template-columns:1fr}.row4{grid-template-columns:repeat(2,auto)}}
 </style>
 
 <div class="wrap">
@@ -198,8 +207,10 @@ footer .n{font-family:var(--f-mono);color:var(--ink);font-variant-numeric:tabula
   </div>
 
   <div class="panel">
-    <h4>Classificazione nei framework</h4>
+    <div class="fwhead"><h4>Classificazione nei framework</h4>
+      <button type="button" class="switch" id="sw-stadi" role="switch" aria-checked="true"><span class="track"><span class="knob"></span></span><span>Stadi SCAI 2026 e CSWG 2026</span></button></div>
     <table class="fw"><tbody id="r-fw"></tbody></table>
+    <p class="hidden-note" id="fw-hidden" hidden>Stadi SCAI 2026 e CSWG 2026 nascosti.</p>
   </div>
 
   <div class="panel">
@@ -246,6 +257,7 @@ const PRESETS={
  tamponamento:{vent:'none',on:['h-pa','h-press','h-ic','k-skin','m-lac']}
 };
 
+let showStages=true;
 function v(id){return $(id).checked}
 function vent(){const r=document.querySelector('input[name="vent"]:checked');return r?r.value:'none'}
 
@@ -285,7 +297,8 @@ function render(){
   fw.push(['SHARC 2023',sh,shs]);
   const scHypo=SCAI_HYPO.some(v);
   const sc=scai(card,perf,scHypo,I,II,III,vaso,v('m-lac'),v('m-svo2'));
-  fw.push(['SCAI 2026',sc[0],sc[1]]); fw.push(['CSWG 2026',sc[2],sc[3]]);
+  if(showStages){fw.push(['SCAI 2026',sc[0],sc[1]]); fw.push(['CSWG 2026',sc[2],sc[3]]);}
+  $('fw-hidden').hidden=showStages;
   $('r-fw').innerHTML=fw.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}${r[2]?`<small>${r[2]}</small>`:''}</td></tr>`).join('');
 
   const n=[];
@@ -297,10 +310,10 @@ function render(){
   if(perf&&II&&!M.some(x=>FLOW.has(x))) n.push(['w','Possibile confondente congestizio','Ipoperfusione basata solo su marker d’organo con pressioni elevate: valutare lattato, ScvO₂ o ΔPCO₂.']);
   if(v('m-glu')) n.push(['','Ipoglicemia','Escludere ipoglicemizzanti e intossicazione da beta-bloccanti.']);
   if(v('m-lac')&&vaso) n.push(['','Lattato in corso di vasoattivi','Se il farmaco è l’adrenalina, il lattato aumenta anche per glicolisi aerobia mediata dai β₂.']);
-  if(/^[A-E]$/.test(sc[0])&&/^[A-E]$/.test(sc[2])&&sc[0]!==sc[2]) n.push(['w','Discordanza di staging',`SCAI 2026 stadio ${sc[0]}, CSWG 2026 stadio ${sc[2]}.`+(key==='111'&&sc[2]==='A'?' Shock cardiogeno per l’ESC, ma CSWG 2026 stadia solo con PAS e lattato.':'')]);
-  if(card&&(v('m-svo2')||v('m-be'))) n.push(['','ScvO₂ e BE in SCAI 2026','La Tabella 1 li elenca tra i reperti associati all’ipoperfusione, ma la Tabella 2 colloca la sat AP <60% nello stadio B e il deficit di basi solo nello stadio E (>10 mEq/L). Qui lo stadio segue la Tabella 2.']);
-  if(card&&scHypo&&!perf) n.push(['w','Ipoperfusione: SCAI e ESC non coincidono','Per SCAI 2026 basta un marcatore di ipoperfusione; per l’ESC servono un segno clinico e un parametro metabolico. Il paziente è SCAI C senza soddisfare il pilastro ESC.']);
-  if(v('m-lac')) n.push(['','Soglia del lattato','ESC 2026 e checklist SCAI S5: >2,0 mmol/L. Tabella 2 SCAI 2026: ≥2 mmol/L. Il valore 2,0 cade in zone diverse.']);
+  if(showStages&&/^[A-E]$/.test(sc[0])&&/^[A-E]$/.test(sc[2])&&sc[0]!==sc[2]) n.push(['w','Discordanza di staging',`SCAI 2026 stadio ${sc[0]}, CSWG 2026 stadio ${sc[2]}.`+(key==='111'&&sc[2]==='A'?' Shock cardiogeno per l’ESC, ma CSWG 2026 stadia solo con PAS e lattato.':'')]);
+  if(showStages&&card&&(v('m-svo2')||v('m-be'))) n.push(['','ScvO₂ e BE in SCAI 2026','La Tabella 1 li elenca tra i reperti associati all’ipoperfusione, ma la Tabella 2 colloca la sat AP <60% nello stadio B e il deficit di basi solo nello stadio E (>10 mEq/L). Qui lo stadio segue la Tabella 2.']);
+  if(showStages&&card&&scHypo&&!perf) n.push(['w','Ipoperfusione: SCAI e ESC non coincidono','Per SCAI 2026 basta un marcatore di ipoperfusione; per l’ESC servono un segno clinico e un parametro metabolico. Il paziente è SCAI C senza soddisfare il pilastro ESC.']);
+  if(v('m-lac')&&showStages) n.push(['','Soglia del lattato','ESC 2026 e checklist SCAI S5: >2,0 mmol/L. Tabella 2 SCAI 2026: ≥2 mmol/L. Il valore 2,0 cade in zone diverse.']);
   if(!n.length) n.push(['','Nessuna clausola attiva','La configurazione non attiva esclusioni o avvertenze specifiche.']);
   $('r-notes').innerHTML=n.map(x=>`<li class="${x[0]}"><strong>${x[1]}.</strong> ${x[2]}</li>`).join('');
 }
@@ -352,6 +365,7 @@ function markPreset(k){document.querySelectorAll('#presets [data-p]').forEach(b=
 document.querySelectorAll('#presets [data-p]').forEach(b=>b.addEventListener('click',()=>{load(PRESETS[b.dataset.p]);markPreset(b.dataset.p)}));
 $('reset').addEventListener('click',()=>{load({vent:'none',on:['c-obs']});markPreset('')});
 document.querySelectorAll('.grid input').forEach(i=>i.addEventListener('change',()=>{render();markPreset('')}));
+$('sw-stadi').addEventListener('click',()=>{showStages=!showStages;$('sw-stadi').setAttribute('aria-checked',String(showStages));render()});
 load(PRESETS.classico); markPreset('classico');
 </script>
 
