@@ -209,7 +209,7 @@ footer .n{font-family:var(--f-mono);color:var(--ink);font-variant-numeric:tabula
 </div>
 </div>
 
-<footer>Combinazioni che soddisfano ciascun pilastro: ipoperfusione <span class="n">1.782</span>, disfunzione <span class="n">31</span>, emodinamica <span class="n">4</span>; configurazioni di CS <span class="n">220.968</span> su <span class="n">524.288</span>. Criteri ESC 2026 (Tabella 3); SHARC (Waksman 2023), SCAI 2026 (Baran, JSCAI 2026, con checklist S5) e CSWG 2026 (Ton, J Card Fail 2026, pre-proof) approssimati: per CSWG si assumono PAS 60–89 mmHg, lattato 2–5 mmol/L e 1–2 farmaci o dispositivi; per SCAI lo stadio D richiede la traiettoria, non modellata; stadio E e arresto non modellati. Per lo staging completo: tsweb-droid.github.io/shock-staging-2026. Aritmie ventricolari trattate come criterio alternativo. Strumento didattico, non per uso clinico.</footer>
+<footer>Combinazioni che soddisfano ciascun pilastro: ipoperfusione <span class="n">1.782</span>, disfunzione <span class="n">31</span>, emodinamica <span class="n">4</span>; configurazioni di CS <span class="n">220.968</span> su <span class="n">524.288</span>. Criteri ESC 2026 (Tabella 3); SHARC (Waksman 2023), SCAI 2026 (Baran, JSCAI 2026, con checklist S5) e CSWG 2026 (Ton, J Card Fail 2026, pre-proof) approssimati: per CSWG si assumono PAS 60–89 mmHg, lattato 2–5 mmol/L e 1–2 farmaci o dispositivi; per SCAI lo stadio segue la Tabella 2 e lo stadio D richiede la traiettoria, non modellata; stadio E e arresto non modellati. Per lo staging completo: tsweb-droid.github.io/shock-staging-2026. Aritmie ventricolari trattate come criterio alternativo. Strumento didattico, non per uso clinico.</footer>
 </div>
 
 <script>
@@ -219,8 +219,9 @@ const RENAL=new Set(['k-olig','m-be','m-cre']);
 const CLIN=['k-skin','k-mind','k-olig'];
 const MET=['m-lac','m-svo2','m-be','m-cre','m-alt','m-glu','m-dco2','m-ratio'];
 const FLOW=new Set(['m-lac','m-svo2','m-dco2','m-ratio']);
-// Marcatori di ipoperfusione elencati da SCAI 2026 (Tabella 1, Tabella 2): per SCAI ne basta uno
-const SCAI_HYPO=['k-skin','k-mind','k-olig','m-lac','m-svo2','m-be','m-cre','m-alt'];
+// Marcatori di ipoperfusione che SCAI 2026 colloca nello stadio C (Tabella 2): per SCAI ne basta uno.
+// ScvO2/SvO2 bassa: in Tabella 2 è un reperto dello stadio B (sat AP <60%), non di C. BE lieve: in Tabella 2 compare solo in E (deficit >10).
+const SCAI_HYPO=['k-skin','k-mind','k-olig','m-lac','m-cre','m-alt'];
 const NAMES={'k-skin':'cute','k-mind':'stato mentale','k-olig':'oliguria','m-lac':'lattato','m-svo2':'ScvO₂','m-be':'BE','m-cre':'creatinina','m-alt':'transaminasi','m-glu':'ipoglicemia','m-dco2':'ΔPCO₂','m-ratio':'rapporto ΔPCO₂/ΔCavO₂'};
 
 const AREAS={
@@ -283,7 +284,7 @@ function render(){
   if(card&&perf){sh='Shock cardiogeno'; shs=I?'Definizione per trial soddisfatta; quella pratica non richiede criteri emodinamici.':'Sottotipo normoteso, dopo esclusione di cause alternative.'}
   fw.push(['SHARC 2023',sh,shs]);
   const scHypo=SCAI_HYPO.some(v);
-  const sc=scai(card,perf,scHypo,I,II,III,vaso,v('m-lac'));
+  const sc=scai(card,perf,scHypo,I,II,III,vaso,v('m-lac'),v('m-svo2'));
   fw.push(['SCAI 2026',sc[0],sc[1]]); fw.push(['CSWG 2026',sc[2],sc[3]]);
   $('r-fw').innerHTML=fw.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}${r[2]?`<small>${r[2]}</small>`:''}</td></tr>`).join('');
 
@@ -295,8 +296,9 @@ function render(){
   if(M.length&&!C.length) n.push(['w','Manca un segno clinico','I soli marker di laboratorio non bastano: serve sempre un segno clinico.']);
   if(perf&&II&&!M.some(x=>FLOW.has(x))) n.push(['w','Possibile confondente congestizio','Ipoperfusione basata solo su marker d’organo con pressioni elevate: valutare lattato, ScvO₂ o ΔPCO₂.']);
   if(v('m-glu')) n.push(['','Ipoglicemia','Escludere ipoglicemizzanti e intossicazione da beta-bloccanti.']);
-  if(v('m-lac')&&vaso) n.push(['','Lattato in corso di adrenalina','L’adrenalina aumenta il lattato per glicolisi aerobia mediata dai β₂.']);
+  if(v('m-lac')&&vaso) n.push(['','Lattato in corso di vasoattivi','Se il farmaco è l’adrenalina, il lattato aumenta anche per glicolisi aerobia mediata dai β₂.']);
   if(/^[A-E]$/.test(sc[0])&&/^[A-E]$/.test(sc[2])&&sc[0]!==sc[2]) n.push(['w','Discordanza di staging',`SCAI 2026 stadio ${sc[0]}, CSWG 2026 stadio ${sc[2]}.`+(key==='111'&&sc[2]==='A'?' Shock cardiogeno per l’ESC, ma CSWG 2026 stadia solo con PAS e lattato.':'')]);
+  if(card&&(v('m-svo2')||v('m-be'))) n.push(['','ScvO₂ e BE in SCAI 2026','La Tabella 1 li elenca tra i reperti associati all’ipoperfusione, ma la Tabella 2 colloca la sat AP <60% nello stadio B e il deficit di basi solo nello stadio E (>10 mEq/L). Qui lo stadio segue la Tabella 2.']);
   if(card&&scHypo&&!perf) n.push(['w','Ipoperfusione: SCAI e ESC non coincidono','Per SCAI 2026 basta un marcatore di ipoperfusione; per l’ESC servono un segno clinico e un parametro metabolico. Il paziente è SCAI C senza soddisfare il pilastro ESC.']);
   if(v('m-lac')) n.push(['','Soglia del lattato','ESC 2026 e checklist SCAI S5: >2,0 mmol/L. Tabella 2 SCAI 2026: ≥2 mmol/L. Il valore 2,0 cade in zone diverse.']);
   if(!n.length) n.push(['','Nessuna clausola attiva','La configurazione non attiva esclusioni o avvertenze specifiche.']);
@@ -314,20 +316,21 @@ function hemoMsg(I,II,III,vaso){
   return 'Nessun criterio emodinamico selezionato.';
 }
 
-function scai(card,perf,scHypo,I,II,III,vaso,lac){
-  if(!card) return ['Non applicabile','','Non applicabile',''];
+function scai(card,perf,scHypo,I,II,III,vaso,lac,svo2){
+  const nc='Pilastro cardiaco ESC non soddisfatto: CSWG e SCAI presuppongono l’origine cardiaca senza criteri propri per verificarla.';
+  if(!card) return ['Non calcolato',nc,'Non calcolato',nc];
   let s26;
   if(scHypo) s26=vaso
     ?['C o D','Ipoperfusione: C. D solo se peggiora a 2–3 h o non migliora a 4–6 h dopo la strategia iniziale; la terapia da sola non definisce lo stadio.']
     :['C',perf?'Ipoperfusione, con o senza ipotensione.':'Ipoperfusione per SCAI, dove basta un marcatore, anche se il pilastro ESC non è soddisfatto.'];
-  else if(vaso) s26=['C','Percorso di recupero: perfusione normalizzata sotto supporto (Figura 1; checklist S5).'];
-  else if(I) s26=['B','Instabilità emodinamica senza ipoperfusione.'];
-  else if(II||III) s26=['B','Emodinamica alterata senza ipoperfusione: '+[III?'IC <2,2':'',II?'pressioni di riempimento elevate (checklist S5)':''].filter(Boolean).join(' e ')+'.'];
+  else if(vaso) s26=['C o B','C se il supporto serve a mantenere la perfusione dopo uno shock (percorso di recupero; Figura 1, checklist S5). Altrimenti B: la terapia da sola non definisce lo stadio.'];
+  else if(I) s26=['B','Instabilità emodinamica senza ipoperfusione. Se il criterio ESC è soddisfatto solo da PAM 60–64 con PAS ≥90, per SCAI (PAM <60) non c’è ipotensione.'];
+  else if(II||III||svo2) s26=['B','Emodinamica alterata senza ipoperfusione: '+[III?'IC <2,2':'',II?'pressioni di riempimento elevate (checklist S5)':'',svo2?'saturazione venosa bassa (sat AP <60%, Tabella 2)':''].filter(Boolean).join(', ')+'.'];
   else s26=['A','A rischio.'];
   let cs;
   if(vaso) cs=lac?['D','D(2): 1–2 farmaci o dispositivi con lattato >2.']:['C o D','C(2) se PAS ≥90 in terapia; D(2) se PAS 60–89.'];
   else if(I&&lac) cs=['C','C(1): PAS 60–89 e lattato >2–5, senza supporti.'];
-  else if(I) cs=['B','PAS 60–89 con lattato ≤2.'];
+  else if(I) cs=['B','PAS 60–89 con lattato ≤2. Se l’ipotensione ESC è solo da PAM <65 con PAS ≥90: A.'];
   else if(lac) cs=['B','Lattato >2–5 senza ipotensione: per SCAI 2026 è invece C.'];
   else cs=['A','“No CS”: '+(perf||scHypo?'senza lattato >2 l’ipoperfusione non entra nella matrice, che usa solo PAS e lattato.':'PAS ≥90, lattato ≤2, nessun supporto.')];
   return [s26[0],s26[1],cs[0],cs[1]];
