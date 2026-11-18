@@ -1,0 +1,355 @@
+<!doctype html><html lang="it"><head><title>Esploratore criteri CS</title><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: schermata singola su desktop; colonna 1 disfunzione + emodinamica, colonna 2 ipoperfusione, colonna 3 verdetto. Sotto 1000px o 620px di altezza torna a scorrimento verticale */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#16202b; --muted:#5a6573; --line:#d7dde4; --soft:#eef1f5;
+  --hemo:#2c6a99; --hemo-bg:#e3eef7;
+  --card:#a5710c; --card-bg:#f8eed8;
+  --perf:#bb3b35; --perf-bg:#f8e3e1;
+  --ok:#2b7a4b; --ok-bg:#e1f1e7; --no:#8f3a32; --no-bg:#f6e4e2; --warn:#94600a; --warn-bg:#fbf0d9;
+  --f-display:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161c; --surface:#19212a; --ink:#e6ebf0; --muted:#9aa6b3; --line:#2c3743; --soft:#212b36;
+  --hemo:#7fb5de; --hemo-bg:#1b2c3b; --card:#e2b357; --card-bg:#33291a; --perf:#ee8c84; --perf-bg:#3a2224;
+  --ok:#78c896; --ok-bg:#1b3326; --no:#ef9a91; --no-bg:#3a2222; --warn:#e8b55a; --warn-bg:#3a2f1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#19212a; --ink:#e6ebf0; --muted:#9aa6b3; --line:#2c3743; --soft:#212b36;
+  --hemo:#7fb5de; --hemo-bg:#1b2c3b; --card:#e2b357; --card-bg:#33291a; --perf:#ee8c84; --perf-bg:#3a2224;
+  --ok:#78c896; --ok-bg:#1b3326; --no:#ef9a91; --no-bg:#3a2222; --warn:#e8b55a; --warn-bg:#3a2f1a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:13.5px;line-height:1.4;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+.wrap{max-width:1600px;height:100%;margin:0 auto;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:10px}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+header h1{font-family:var(--f-display);font-weight:600;font-size:24px;line-height:1.15;margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.presets .lab{font-size:12.5px;color:var(--muted);margin-right:2px}
+button{font:inherit;cursor:pointer}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 11px;font-size:12.5px}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.reset{background:transparent;color:var(--muted)}
+button:focus-visible,label:focus-within{outline:2px solid var(--hemo);outline-offset:1px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.35fr);gap:12px;min-height:0}
+.col{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0;overflow:auto}
+.pillar{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.p-perf{flex:1}
+.pillar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.pillar-head h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
+.dot{width:11px;height:11px;border-radius:50%;flex:none}
+.p-hemo .dot{background:var(--hemo)} .p-card .dot{background:var(--card)} .p-perf .dot{background:var(--perf)}
+.rule{font-size:12px;color:var(--muted);padding:6px 12px 0}
+.pill{font-family:var(--f-mono);font-size:11.5px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.yes{background:var(--ok-bg);color:var(--ok)} .pill.no{background:var(--no-bg);color:var(--no)}
+.body{padding:4px 8px 8px;display:flex;flex-direction:column;gap:1px}
+.sub{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:5px 4px 1px}
+.opt{display:flex;gap:8px;align-items:flex-start;padding:4px 6px;border-radius:6px;cursor:pointer}
+.opt:hover{background:var(--soft)}
+.opt input{margin:2px 0 0;flex:none;width:15px;height:15px}
+.p-hemo .opt input{accent-color:var(--hemo)} .p-card .opt input{accent-color:var(--card)} .p-perf .opt input{accent-color:var(--perf)}
+.opt .t{display:flex;flex-direction:column;min-width:0}
+.opt .t b{font-weight:500}
+.opt .t small{color:var(--muted);font-size:11.5px}
+.opt.locked{opacity:.55;cursor:not-allowed}
+.code{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);margin-right:4px}
+.tagR{font-family:var(--f-mono);font-size:10.5px;border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-left:5px;color:var(--muted)}
+.row4{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:0 2px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 6px}
+.toggle{display:flex;gap:8px;align-items:center;background:var(--hemo-bg);border-radius:7px;padding:5px 9px;margin:4px 0 2px;cursor:pointer}
+.toggle input{accent-color:var(--hemo);width:15px;height:15px;margin:0}
+.toggle span{font-size:12.5px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.top{display:grid;grid-template-columns:clamp(220px,19vw,300px) minmax(0,1fr);gap:14px;align-items:center}
+.verdict{display:flex;flex-direction:column;gap:4px;min-width:0}
+.verdict .area{font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.verdict h3{font-family:var(--f-display);font-weight:600;font-size:21px;line-height:1.15;margin:0;text-wrap:balance}
+.verdict p{margin:0;color:var(--muted);font-size:12.5px}
+.venn{width:100%;max-width:300px;height:auto;display:block}
+.combo{font-family:var(--f-mono);font-size:12px;display:flex;flex-wrap:wrap;gap:5px}
+.combo span{padding:1px 7px;border-radius:5px;background:var(--soft)}
+.combo span.on{background:var(--hemo-bg);color:var(--hemo)}
+.combo span.off{text-decoration:line-through;color:var(--muted)}
+.hmsg{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+table.fw{width:100%;border-collapse:collapse;font-size:12.5px}
+table.fw th{text-align:left;font-weight:500;padding:4px 8px 4px 0;vertical-align:top;width:34%;white-space:nowrap}
+table.fw td{padding:4px 0;vertical-align:top}
+table.fw tr+tr th,table.fw tr+tr td{border-top:1px solid var(--line)}
+table.fw td small{display:block;color:var(--muted);font-size:11.5px}
+.notes{display:flex;flex-direction:column;gap:5px;margin:0;padding:0;list-style:none}
+.notes li{font-size:12px;padding:5px 8px;border-radius:6px;background:var(--soft)}
+.notes li.w{background:var(--warn-bg)}
+.notes li.w strong{color:var(--warn)}
+.notes li strong{font-weight:600}
+h4{font-family:var(--f-mono);font-weight:500;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+footer{font-size:11px;color:var(--muted);line-height:1.35}
+footer .n{font-family:var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:no-preference){.vmark{transition:transform .25s ease}}
+@media (max-width:1000px),(max-height:620px){
+  html,body{height:auto}
+  .wrap{height:auto;grid-template-rows:none}
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .col{overflow:visible}
+}
+@media (max-width:480px){.top{grid-template-columns:minmax(0,1fr)}.venn{margin:0 auto;max-width:220px}.cols{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Esploratore dei criteri di shock cardiogeno</h1>
+  <span class="eyebrow">Masterclass SIC 2026 · criteri ESC 2026, Tabella 3</span>
+</header>
+
+<div class="presets" id="presets">
+  <span class="lab">Scenari:</span>
+  <button class="chip" data-p="classico">AMI-CS classico</button>
+  <button class="chip" data-p="normoteso">CS normoteso</button>
+  <button class="chip" data-p="noradr">Già in noradrenalina</button>
+  <button class="chip" data-p="misto">Shock misto vasoplegico</button>
+  <button class="chip" data-p="cardiorenale">Cardiorenale congestizio</button>
+  <button class="chip" data-p="escape">Scompenso senza shock</button>
+  <button class="chip" data-p="tamponamento">Tamponamento</button>
+  <button class="chip reset" id="reset">Azzera</button>
+</div>
+
+<div class="grid">
+<div class="col inputs">
+<section class="pillar p-card" aria-labelledby="h-card">
+  <div class="pillar-head"><h2 id="h-card"><span class="dot"></span>Disfunzione cardiaca</h2><span class="pill no" id="st-card">non soddisfatto</span></div>
+  <div class="rule">Almeno un elemento, con esclusione obbligatoria dello shock ostruttivo.</div>
+  <div class="body">
+    <div class="sub">Disfunzione ventricolare severa</div>
+    <div class="row4">
+      <label class="opt"><input type="radio" name="vent" id="v-none" value="none"><span class="t"><b>Nessuna</b></span></label>
+      <label class="opt"><input type="radio" name="vent" id="v-lv" value="lv"><span class="t"><b>Sinistra</b></span></label>
+      <label class="opt"><input type="radio" name="vent" id="v-rv" value="rv"><span class="t"><b>Destra</b></span></label>
+      <label class="opt"><input type="radio" name="vent" id="v-biv" value="biv"><span class="t"><b>Biventricolare</b></span></label>
+    </div>
+    <div class="sub">Altri elementi</div>
+    <label class="opt"><input type="checkbox" id="c-valv"><span class="t"><b>Valvulopatia severa</b></span></label>
+    <label class="opt"><input type="checkbox" id="c-mech"><span class="t"><b>Complicanza meccanica</b><small>Rottura di setto, muscolo papillare o parete libera</small></span></label>
+    <label class="opt"><input type="checkbox" id="c-va"><span class="t"><b>Aritmie ventricolari ricorrenti o persistenti</b></span></label>
+    <div class="sub">Condizione obbligatoria</div>
+    <label class="opt"><input type="checkbox" id="c-obs"><span class="t"><b>Shock ostruttivo escluso</b><small>Per esempio tamponamento cardiaco</small></span></label>
+  </div>
+</section>
+
+<section class="pillar p-hemo" aria-labelledby="h-hemo">
+  <div class="pillar-head"><h2 id="h-hemo"><span class="dot"></span>Alterazioni emodinamiche</h2><span class="pill no" id="st-hemo">non soddisfatto</span></div>
+  <div class="rule">Almeno due dei tre criteri.</div>
+  <div class="body">
+    <label class="toggle"><input type="checkbox" id="h-vaso"><span>Paziente già in farmaci vasoattivi</span></label>
+    <label class="opt" id="o-pa"><input type="checkbox" id="h-pa"><span class="t"><b><span class="code">I</span>PA</b><small>PAS &lt;90 e/o PAM &lt;65 mmHg per &gt;30 min, o valori superiori in vasoattivi</small></span></label>
+    <label class="opt"><input type="checkbox" id="h-press"><span class="t"><b><span class="code">II</span>Elevate pressioni di riempimento S e/o D</b><small>Clinica, imaging o misura diretta (PVC &gt;12, PAWP &gt;18 mmHg)</small></span></label>
+    <label class="opt" id="o-ic"><input type="checkbox" id="h-ic"><span class="t"><b><span class="code">III</span>IC &lt;2,2 L/min/m²</b><small id="ic-note">Senza vasoattivi; ecocardiografia o catetere in arteria polmonare</small></span></label>
+  </div>
+</section>
+</div>
+
+<div class="col">
+<section class="pillar p-perf" aria-labelledby="h-perf">
+  <div class="pillar-head"><h2 id="h-perf"><span class="dot"></span>Ipoperfusione a riposo</h2><span class="pill no" id="st-perf">non soddisfatto</span></div>
+  <div class="rule">Almeno un segno clinico e almeno un parametro metabolico. Oliguria, BE e creatinina <span class="tagR">R</span> contano come un solo elemento.</div>
+  <div class="body">
+    <div class="sub">Segni clinici</div>
+    <label class="opt"><input type="checkbox" id="k-skin"><span class="t"><b>Alterazioni cutanee</b><small>Cute fredda e sudata, marezzatura ≥2 e/o CRT &gt;3 s</small></span></label>
+    <label class="opt"><input type="checkbox" id="k-mind"><span class="t"><b>Stato mentale alterato o agitazione</b><small>Di nuova insorgenza</small></span></label>
+    <label class="opt"><input type="checkbox" id="k-olig"><span class="t"><b>Oliguria &lt;0,5 mL/kg/h<span class="tagR">R</span></b></span></label>
+    <div class="sub">Parametri metabolici</div>
+    <label class="opt"><input type="checkbox" id="m-lac"><span class="t"><b>Lattato &gt;2,0 mmol/L</b></span></label>
+    <label class="opt"><input type="checkbox" id="m-svo2"><span class="t"><b>ScvO₂ o SvO₂ bassa</b><small>Tipicamente &lt;55%</small></span></label>
+    <label class="opt"><input type="checkbox" id="m-be"><span class="t"><b>BE ≤ −2<span class="tagR">R</span></b></span></label>
+    <label class="opt"><input type="checkbox" id="m-cre"><span class="t"><b>Creatinina in aumento<span class="tagR">R</span></b><small>&gt;1,5× il basale o +0,3 mg/dL</small></span></label>
+    <label class="opt"><input type="checkbox" id="m-alt"><span class="t"><b>Transaminasi &gt;2× normale</b></span></label>
+    <label class="opt"><input type="checkbox" id="m-glu"><span class="t"><b>Ipoglicemia spontanea</b><small>Non da ipoglicemizzanti</small></span></label>
+    <label class="opt"><input type="checkbox" id="m-dco2"><span class="t"><b>ΔPv-aCO₂ &gt;6 mmHg</b></span></label>
+    <label class="opt"><input type="checkbox" id="m-ratio"><span class="t"><b>ΔPv-aCO₂ / ΔCa-vO₂ &gt;1,4</b></span></label>
+  </div>
+</section>
+</div>
+
+<div class="col result" aria-live="polite">
+  <div class="panel top">
+    <svg class="venn" viewBox="30 26 260 248" role="img" aria-label="Posizione del paziente nel diagramma dei tre pilastri">
+      <circle id="vc-h" cx="120" cy="115" r="82" stroke-width="1.6"/>
+      <circle id="vc-c" cx="200" cy="115" r="82" stroke-width="1.6"/>
+      <circle id="vc-p" cx="160" cy="185" r="82" stroke-width="1.6"/>
+      <g class="vmark" id="vmark"><circle r="15" fill="var(--ink)"/><text id="vmark-n" text-anchor="middle" dominant-baseline="central" style="fill:var(--bg);font-family:var(--f-mono);font-size:15px">4</text></g>
+    </svg>
+    <div class="verdict">
+      <span class="area" id="r-area">Area 4</span>
+      <h3 id="r-title">Shock cardiogeno</h3>
+      <p id="r-desc"></p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h4>Combinazione emodinamica</h4>
+    <div class="combo" id="r-combo"></div>
+    <p class="hmsg" id="r-hemo-msg"></p>
+  </div>
+
+  <div class="panel">
+    <h4>Classificazione nei framework</h4>
+    <table class="fw"><tbody id="r-fw"></tbody></table>
+  </div>
+
+  <div class="panel">
+    <h4>Clausole e avvertenze</h4>
+    <ul class="notes" id="r-notes"></ul>
+  </div>
+</div>
+</div>
+
+<footer>Combinazioni che soddisfano ciascun pilastro: ipoperfusione <span class="n">1.782</span>, disfunzione <span class="n">31</span>, emodinamica <span class="n">4</span>; configurazioni di CS <span class="n">220.968</span> su <span class="n">524.288</span>. Criteri ESC 2026 (Tabella 3); SHARC (Waksman 2023), SCAI 2026 (Baran, JSCAI 2026, con checklist S5) e CSWG 2026 (Ton, J Card Fail 2026, pre-proof) approssimati: per CSWG si assumono PAS 60–89 mmHg, lattato 2–5 mmol/L e 1–2 farmaci o dispositivi; per SCAI lo stadio D richiede la traiettoria, non modellata; stadio E e arresto non modellati. Per lo staging completo: tsweb-droid.github.io/shock-staging-2026. Aritmie ventricolari trattate come criterio alternativo. Strumento didattico, non per uso clinico.</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const CB=['c-valv','c-mech','c-va','c-obs','h-vaso','h-pa','h-press','h-ic','k-skin','k-mind','k-olig','m-lac','m-svo2','m-be','m-cre','m-alt','m-glu','m-dco2','m-ratio'];
+const RENAL=new Set(['k-olig','m-be','m-cre']);
+const CLIN=['k-skin','k-mind','k-olig'];
+const MET=['m-lac','m-svo2','m-be','m-cre','m-alt','m-glu','m-dco2','m-ratio'];
+const FLOW=new Set(['m-lac','m-svo2','m-dco2','m-ratio']);
+// Marcatori di ipoperfusione elencati da SCAI 2026 (Tabella 1, Tabella 2): per SCAI ne basta uno
+const SCAI_HYPO=['k-skin','k-mind','k-olig','m-lac','m-svo2','m-be','m-cre','m-alt'];
+const NAMES={'k-skin':'cute','k-mind':'stato mentale','k-olig':'oliguria','m-lac':'lattato','m-svo2':'ScvO₂','m-be':'BE','m-cre':'creatinina','m-alt':'transaminasi','m-glu':'ipoglicemia','m-dco2':'ΔPCO₂','m-ratio':'rapporto ΔPCO₂/ΔCavO₂'};
+
+const AREAS={
+ '111':[4,'Shock cardiogeno','Tutti e tre i pilastri soddisfatti. Verificare il nesso causale: disfunzione commisurata e pressioni non da ipovolemia.'],
+ '110':[3,'Scompenso senza shock','Alterazioni emodinamiche e disfunzione cardiaca senza ipoperfusione a riposo.'],
+ '101':[5,'Shock non cardiogeno','Alterazioni emodinamiche e ipoperfusione senza un criterio di disfunzione valido, incluso lo shock ostruttivo.'],
+ '011':[6,'Ipoperfusione con emodinamica incompleta','Disfunzione e ipoperfusione con meno di due criteri emodinamici. Non è CS per l’ESC.'],
+ '100':[1,'Solo alterazioni emodinamiche','Nessuna disfunzione cardiaca severa e nessuna ipoperfusione.'],
+ '010':[2,'Disfunzione cardiaca compensata','Disfunzione severa senza alterazioni emodinamiche né ipoperfusione.'],
+ '001':[7,'Solo ipoperfusione','Marker di ipoperfusione isolati: cercare cause non circolatorie.'],
+ '000':[0,'Nessun pilastro soddisfatto','Seleziona i criteri presenti o scegli uno scenario.']
+};
+const POS={'111':[160,140],'110':[160,78],'101':[113,165],'011':[207,165],'100':[80,100],'010':[240,100],'001':[160,232],'000':[52,255]};
+
+const PRESETS={
+ classico:{vent:'lv',on:['c-obs','h-pa','h-press','h-ic','k-skin','m-lac']},
+ normoteso:{vent:'lv',on:['c-obs','h-press','h-ic','k-skin','m-lac']},
+ noradr:{vent:'lv',on:['c-obs','h-vaso','h-press','k-mind','m-lac']},
+ misto:{vent:'lv',on:['c-obs','h-vaso','k-skin','m-lac']},
+ cardiorenale:{vent:'biv',on:['c-obs','h-press','k-olig','m-cre']},
+ escape:{vent:'lv',on:['c-obs','h-press','h-ic']},
+ tamponamento:{vent:'none',on:['h-pa','h-press','h-ic','k-skin','m-lac']}
+};
+
+function v(id){return $(id).checked}
+function vent(){const r=document.querySelector('input[name="vent"]:checked');return r?r.value:'none'}
+
+function render(){
+  const vaso=v('h-vaso');
+  const pa=$('h-pa'), ic=$('h-ic');
+  if(vaso){pa.checked=true;pa.disabled=true;ic.checked=false;ic.disabled=true;
+    $('o-pa').classList.add('locked');$('o-ic').classList.add('locked');
+    $('ic-note').textContent='Non computabile: richiede una misura senza vasoattivi';}
+  else{pa.disabled=false;ic.disabled=false;$('o-pa').classList.remove('locked');$('o-ic').classList.remove('locked');
+    $('ic-note').textContent='Senza vasoattivi; ecocardiografia o catetere in arteria polmonare';}
+
+  const ve=vent(), anyCard=ve!=='none'||v('c-valv')||v('c-mech')||v('c-va'), obs=v('c-obs');
+  const card=anyCard&&obs;
+  const I=v('h-pa'), II=v('h-press'), III=v('h-ic')&&!vaso;
+  const nH=(I?1:0)+(II?1:0)+(III?1:0), hemo=nH>=2;
+  const C=CLIN.filter(v), M=MET.filter(v);
+  let perf=false; for(const c of C){for(const m of M){if(!(RENAL.has(c)&&RENAL.has(m)))perf=true}}
+  const key=`${hemo?1:0}${card?1:0}${perf?1:0}`;
+
+  setPill('st-card',card); setPill('st-hemo',hemo); setPill('st-perf',perf);
+  const a=AREAS[key];
+  $('r-area').textContent=a[0]?`Area ${a[0]} del diagramma`:'Fuori dal diagramma';
+  $('r-title').textContent=a[1]; $('r-desc').textContent=a[2];
+  $('vmark').setAttribute('transform',`translate(${POS[key][0]},${POS[key][1]})`);
+  $('vmark-n').textContent=a[0]||'–';
+  paint('vc-h',hemo,'--hemo'); paint('vc-c',card,'--card'); paint('vc-p',perf,'--perf');
+
+  const ii=(on,t)=>`<span class="${on?'on':'off'}">${t} ${on?'✓':'✗'}</span>`;
+  $('r-combo').innerHTML=ii(I,'PA')+ii(II,'Pressioni')+(vaso?'<span class="off">IC n.c.</span>':ii(III,'IC'));
+  $('r-hemo-msg').textContent=hemoMsg(I,II,III,vaso);
+
+  const fw=[];
+  fw.push(['ESC 2026',key==='111'?'Shock cardiogeno':'Non shock cardiogeno','']);
+  let sh='Non shock cardiogeno', shs='';
+  if(card&&perf){sh='Shock cardiogeno'; shs=I?'Definizione per trial soddisfatta; quella pratica non richiede criteri emodinamici.':'Sottotipo normoteso, dopo esclusione di cause alternative.'}
+  fw.push(['SHARC 2023',sh,shs]);
+  const scHypo=SCAI_HYPO.some(v);
+  const sc=scai(card,perf,scHypo,I,II,III,vaso,v('m-lac'));
+  fw.push(['SCAI 2026',sc[0],sc[1]]); fw.push(['CSWG 2026',sc[2],sc[3]]);
+  $('r-fw').innerHTML=fw.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}${r[2]?`<small>${r[2]}</small>`:''}</td></tr>`).join('');
+
+  const n=[];
+  if(anyCard&&!obs) n.push(['w','Shock ostruttivo non escluso','Il pilastro della disfunzione non è soddisfatto finché non si esclude una causa ostruttiva.']);
+  const rSel=[...C,...M].filter(x=>RENAL.has(x));
+  if(rSel.length>1) n.push([perf?'':'w','Clausola renale',`${rSel.map(x=>NAMES[x]).join(', ')} contano come un solo elemento.`+(perf?'':' Da soli non bastano.')]);
+  if(C.length&&!M.length) n.push(['w','Manca un parametro metabolico','Serve almeno un parametro metabolico oltre al segno clinico.']);
+  if(M.length&&!C.length) n.push(['w','Manca un segno clinico','I soli marker di laboratorio non bastano: serve sempre un segno clinico.']);
+  if(perf&&II&&!M.some(x=>FLOW.has(x))) n.push(['w','Possibile confondente congestizio','Ipoperfusione basata solo su marker d’organo con pressioni elevate: valutare lattato, ScvO₂ o ΔPCO₂.']);
+  if(v('m-glu')) n.push(['','Ipoglicemia','Escludere ipoglicemizzanti e intossicazione da beta-bloccanti.']);
+  if(v('m-lac')&&vaso) n.push(['','Lattato in corso di adrenalina','L’adrenalina aumenta il lattato per glicolisi aerobia mediata dai β₂.']);
+  if(/^[A-E]$/.test(sc[0])&&/^[A-E]$/.test(sc[2])&&sc[0]!==sc[2]) n.push(['w','Discordanza di staging',`SCAI 2026 stadio ${sc[0]}, CSWG 2026 stadio ${sc[2]}.`+(key==='111'&&sc[2]==='A'?' Shock cardiogeno per l’ESC, ma CSWG 2026 stadia solo con PAS e lattato.':'')]);
+  if(card&&scHypo&&!perf) n.push(['w','Ipoperfusione: SCAI e ESC non coincidono','Per SCAI 2026 basta un marcatore di ipoperfusione; per l’ESC servono un segno clinico e un parametro metabolico. Il paziente è SCAI C senza soddisfare il pilastro ESC.']);
+  if(v('m-lac')) n.push(['','Soglia del lattato','ESC 2026 e checklist SCAI S5: >2,0 mmol/L. Tabella 2 SCAI 2026: ≥2 mmol/L. Il valore 2,0 cade in zone diverse.']);
+  if(!n.length) n.push(['','Nessuna clausola attiva','La configurazione non attiva esclusioni o avvertenze specifiche.']);
+  $('r-notes').innerHTML=n.map(x=>`<li class="${x[0]}"><strong>${x[1]}.</strong> ${x[2]}</li>`).join('');
+}
+
+function hemoMsg(I,II,III,vaso){
+  if(I&&II&&III) return 'Freddo-umido ipoteso (Forrester IV): il fenotipo di riferimento.';
+  if(I&&II) return vaso?'IC non computabile in vasoattivi: la diagnosi poggia su PA e congestione.':'IC ≥2,2 con PA e congestione: contraddice l’IC basso conditio sine qua non dell’ESC. Sospettare shock misto o errore di misura (DIV, IT severa).';
+  if(I&&III) return 'Freddo-asciutto ipoteso: escludere l’ipovolemia con prova di carico o sollevamento passivo delle gambe.';
+  if(II&&III) return 'Normoteso, congesto, a bassa portata: distingue dallo scompenso avanzato solo l’ipoperfusione.';
+  if(I) return vaso?'In vasoattivi senza congestione l’IC non è computabile: pilastro non soddisfacibile.':'Ipotensione isolata: con ipoperfusione, pensare a shock misto o vasoplegico.';
+  if(II) return 'Solo congestione: la disfunzione d’organo può essere congestizia, non da bassa portata.';
+  if(III) return 'Solo IC basso: freddo-asciutto normoteso (Forrester III). Escludere la bassa portata da precarico.';
+  return 'Nessun criterio emodinamico selezionato.';
+}
+
+function scai(card,perf,scHypo,I,II,III,vaso,lac){
+  if(!card) return ['Non applicabile','','Non applicabile',''];
+  let s26;
+  if(scHypo) s26=vaso
+    ?['C o D','Ipoperfusione: C. D solo se peggiora a 2–3 h o non migliora a 4–6 h dopo la strategia iniziale; la terapia da sola non definisce lo stadio.']
+    :['C',perf?'Ipoperfusione, con o senza ipotensione.':'Ipoperfusione per SCAI, dove basta un marcatore, anche se il pilastro ESC non è soddisfatto.'];
+  else if(vaso) s26=['C','Percorso di recupero: perfusione normalizzata sotto supporto (Figura 1; checklist S5).'];
+  else if(I) s26=['B','Instabilità emodinamica senza ipoperfusione.'];
+  else if(II||III) s26=['B','Emodinamica alterata senza ipoperfusione: '+[III?'IC <2,2':'',II?'pressioni di riempimento elevate (checklist S5)':''].filter(Boolean).join(' e ')+'.'];
+  else s26=['A','A rischio.'];
+  let cs;
+  if(vaso) cs=lac?['D','D(2): 1–2 farmaci o dispositivi con lattato >2.']:['C o D','C(2) se PAS ≥90 in terapia; D(2) se PAS 60–89.'];
+  else if(I&&lac) cs=['C','C(1): PAS 60–89 e lattato >2–5, senza supporti.'];
+  else if(I) cs=['B','PAS 60–89 con lattato ≤2.'];
+  else if(lac) cs=['B','Lattato >2–5 senza ipotensione: per SCAI 2026 è invece C.'];
+  else cs=['A','“No CS”: '+(perf||scHypo?'senza lattato >2 l’ipoperfusione non entra nella matrice, che usa solo PAS e lattato.':'PAS ≥90, lattato ≤2, nessun supporto.')];
+  return [s26[0],s26[1],cs[0],cs[1]];
+}
+
+function setPill(id,ok){const e=$(id);e.className='pill '+(ok?'yes':'no');e.textContent=ok?'soddisfatto':'non soddisfatto'}
+function paint(id,on,tok){const e=$(id), col=`var(${tok})`;
+  e.setAttribute('fill',on?col:'none'); e.setAttribute('fill-opacity',on?'0.22':'0');
+  e.setAttribute('stroke',col); e.setAttribute('stroke-dasharray',on?'':'5 5');}
+
+function load(p){
+  CB.forEach(id=>{$(id).checked=false});
+  const r=$('v-'+(p.vent||'none')); if(r) r.checked=true;
+  (p.on||[]).forEach(id=>{$(id).checked=true});
+  render();
+}
+function markPreset(k){document.querySelectorAll('#presets [data-p]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===k?'true':'false'))}
+
+document.querySelectorAll('#presets [data-p]').forEach(b=>b.addEventListener('click',()=>{load(PRESETS[b.dataset.p]);markPreset(b.dataset.p)}));
+$('reset').addEventListener('click',()=>{load({vent:'none',on:['c-obs']});markPreset('')});
+document.querySelectorAll('.grid input').forEach(i=>i.addEventListener('change',()=>{render();markPreset('')}));
+load(PRESETS.classico); markPreset('classico');
+</script>
+
+</body></html>
